@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Balance dApp</title>
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="stylesheet" href="//unpkg.com/mvp.css@1.12/mvp.css">
+</head>
+
+<body style="padding: 0 20px 10px">
+    <h1>Balance Check</h1>
+    <p>
+        Does a simple lookup and report of balance information for an account
+    </p>
+    <form id="setupForm">
+        <label for="provider">Websocket Connection</label>
+        <input type="text" id="provider" name="provider" list="provider-list" value="wss://1.rpc.frequency.xyz"><br>
+
+        <datalist id="provider-list">
+            <option value="wss://rpc.rococo.frequency.xyz">
+            <option value="wss://1.rpc.frequency.xyz">
+            <option value="ws://localhost:9944">
+        </datalist>
+
+        <button type="button" id="connectButton">Connect to Node</button>
+    </form>
+    <br />
+    <form id="balanceForm" style="display: none;">
+        <label for="logNote">Note</label>
+        <input type="text" id="logNote" name="logNote" placeholder="Optional log note"><br>
+        <label for="lookupAddress">Lookup Address:</label>
+        <input type="text" id="lookupAddress" name="lookupAddress" required><br>
+        <button type="submit">Log Balance</button>
+    </form>
+    <div>
+        <button type="button" id="copyToSpreadsheet" style="display:none; float: right">To Clipboard</button>
+        <h2>Balance Log</h2>
+        <ul id="log"></ul>
+        <button type="button" id="clearLog">Clear</button>
+    </div>
+    <script type="module" src="./main.js"></script>
+</body>
+
+
+</html>
