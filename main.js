@@ -4,6 +4,7 @@ import { encodeAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypt
 
 let PREFIX = 42;
 let UNIT = "UNIT";
+let DECIMALS = 8;
 
 let singletonApi;
 let singletonProvider;
@@ -35,6 +36,7 @@ async function loadApi(providerUri) {
     const chain = await singletonApi.rpc.system.properties();
     PREFIX = Number(chain.ss58Format.toString());
     UNIT = chain.tokenSymbol.toHuman();
+    DECIMALS = chain.tokenDecimals.toJSON()[0];
     document.querySelectorAll(".unit").forEach(e => e.innerHTML = UNIT);
     return singletonApi;
 }
@@ -81,11 +83,11 @@ function triggerUpdates() {
 function toDecimalUnit(balance) {
     // Some basic formatting of the bigint
     balance = balance.toString();
-    if (balance.length >= 8) {
-        return `${BigInt(balance.slice(0, -8)).toLocaleString()}.${balance.slice(-8)}`;
+    if (balance.length >= DECIMALS) {
+        return `${BigInt(balance.slice(0, -DECIMALS)).toLocaleString()}.${balance.slice(-DECIMALS)}`;
     }
 
-    return (Number(balance) / 10 ^ 8).toLocaleString();
+    return (Number(balance) / (10 ^ DECIMALS)).toLocaleString();
 }
 
 async function logBalance(lookupAddress, note = "") {
@@ -97,7 +99,8 @@ async function logBalance(lookupAddress, note = "") {
 
     const resp = await api.query.system.account(lookupAddress);
     const account = encodeAddress(lookupAddress, PREFIX);
-    const total = resp.data.free + resp.data.reserved;
+    const total = BigInt(resp.data.free.toJSON()) + BigInt(resp.data.reserved.toJSON());
+
     const balanceData = {
         decimal: toDecimalUnit(total),
         plancks: BigInt(total).toLocaleString(),
@@ -106,7 +109,6 @@ async function logBalance(lookupAddress, note = "") {
         note,
     };
 
-    console.log(balanceData);
     loggedAccountData[account] = balanceData;
 
     const msg = Object.entries(balanceData).map(([k, v]) => `${k}: ${v}`);
