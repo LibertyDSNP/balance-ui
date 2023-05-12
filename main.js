@@ -1,54 +1,8 @@
-import { WsProvider, ApiPromise } from 'https://cdn.jsdelivr.net/npm/@polkadot/api@10.2.2/+esm';
 import { checkAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@10.2.2/+esm';
 import { encodeAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@11.1.3/+esm';
-
-let PREFIX = 42;
-let UNIT = "UNIT";
-let DECIMALS = 8;
-
-let singletonApi;
-let singletonProvider;
+import { loadApi, initConnection, getCurrentRelayChainBlockNumber, getDecimals, getPrefix, getUnit } from './api.js';
 
 let loggedAccountData = {};
-
-// Load up the api for the given provider uri
-async function loadApi(providerUri) {
-    // Singleton
-    if (!providerUri && singletonApi) return singletonApi;
-    // Just asking for the singleton, but don't have it
-    if (!providerUri) {
-        return null;
-    }
-    // Handle disconnects
-    if (providerUri) {
-        if (singletonApi) {
-            await singletonApi.disconnect();
-        } else if (singletonProvider) {
-            await singletonProvider.disconnect();
-        }
-    }
-
-    // Singleton Provider because it starts trying to connect here.
-    singletonProvider = new WsProvider(providerUri);
-    singletonApi = await ApiPromise.create({ provider: singletonProvider });
-
-    await singletonApi.isReady;
-    const chain = await singletonApi.rpc.system.properties();
-    PREFIX = Number(chain.ss58Format.toString());
-    UNIT = chain.tokenSymbol.toHuman();
-    DECIMALS = chain.tokenDecimals.toJSON()[0];
-    document.querySelectorAll(".unit").forEach(e => e.innerHTML = UNIT);
-    return singletonApi;
-}
-
-// Connect to the wallet and blockchain
-async function connect(event) {
-    event.preventDefault();
-    await loadApi(document.getElementById("provider").value);
-
-    document.getElementById("balanceForm").style.display = "block";
-    document.getElementById("copyToSpreadsheet").style.display = "block";
-}
 
 // Simple display of a new log
 function addLog(msg, prefix) {
@@ -74,13 +28,9 @@ function addLog(msg, prefix) {
     document.getElementById("log").prepend(li);
 }
 
-// Update the various derived values from fields
-function triggerUpdates() {
-    // Currently no derived values
-}
-
 // Balance to decimal UNIT
 function toDecimalUnit(balance) {
+    const DECIMALS = getDecimals();
     // Some basic formatting of the bigint
     balance = balance.toString();
     if (balance.length >= DECIMALS) {
@@ -90,15 +40,78 @@ function toDecimalUnit(balance) {
     return (Number(balance) / (10 ^ DECIMALS)).toLocaleString();
 }
 
-async function logBalance(lookupAddress, note = "") {
+function displaySchedule(schedule, relayBlockNumber) {
+    if (schedule.periodCount > 1) {
+        const unsupported = document.createElement("span");
+        unsupported.innerHTML = "Unsupported per period value";
+        return unsupported;
+    }
+    const template = document.querySelector('#schedule-template');
+    const scheduleEl = template.content.cloneNode(true);
+    scheduleEl.querySelector(".balanceResultTokens").innerHTML = toDecimalUnit(schedule.perPeriod.toString()) + " " + getUnit();
+    const unlockRelayBlock = (schedule.start.toNumber() + schedule.period.toNumber());
+    scheduleEl.querySelector(".unlockRelayBlock").innerHTML = unlockRelayBlock.toLocaleString();
+
+    const untilUnlock = (relayBlockNumber - unlockRelayBlock) * 6;
+    const unlockEstimate = new Date(Date.now() + untilUnlock);
+    scheduleEl.querySelector(".estimatedUnlock").innerHTML = unlockEstimate.toLocaleString();
+
+    return scheduleEl;
+}
+
+async function updateResults(account, balanceData) {
     const api = await loadApi();
+
+    const resultSchedule = document.getElementById("timeReleaseSchedule");
+    resultSchedule.innerHTML = "Loading...";
+
+    document.getElementById("resultAddress").innerHTML = account;
+    document.getElementById("resultBalanceTokens").innerHTML = balanceData.decimal + " " + getUnit();
+    document.getElementById("resultBalancePlancks").innerHTML = balanceData.plancks;
+    document.getElementById("resultReserved").innerHTML = balanceData.reserved;
+    document.getElementById("currentResults").style.display = "block";
+
+    // Look up the timeRelease Pallet information for the address
+    const schedules = await api.query.timeRelease.releaseSchedules(account);
+
+    if (schedules.length === 0) {
+        resultSchedule.innerHTML = "None";
+    } else {
+        const relayBlockNumber = await getCurrentRelayChainBlockNumber();
+        const ul = document.createElement("ul");
+
+        const isUnlocked = s => (s.periodCount.toNumber() === 1 && (s.start.toNumber() + s.period.toNumber() < relayBlockNumber));
+
+        const unlockedSum = schedules
+            .filter(isUnlocked)
+            .reduce((sum, s) => (sum + BigInt(s.perPeriod.toString())), 0n)
+
+        if (unlockedSum > 0n) {
+            const unlockLi = document.createElement("li");
+            unlockLi.innerHTML = `<b>Ready to Claim:</b> ${toDecimalUnit(unlockedSum)} ${getUnit()}`;
+            ul.append(unlockLi);
+        }
+
+        schedules.filter(s => !isUnlocked(s)).forEach(s => {
+            const li = document.createElement("li");
+            li.append(displaySchedule(s, relayBlockNumber));
+            ul.append(li);
+        });
+        resultSchedule.innerHTML = "";
+        resultSchedule.append(ul);
+    }
+}
+
+async function logBalance(lookupAddress) {
+    const api = await loadApi();
+    document.getElementById("currentResults").style.display = "none";
     if (!api || !lookupAddress) {
         return;
     }
     if (!validateAddress(lookupAddress)) return;
 
     const resp = await api.query.system.account(lookupAddress);
-    const account = encodeAddress(lookupAddress, PREFIX);
+    const account = encodeAddress(lookupAddress, getPrefix());
     const total = BigInt(resp.data.free.toJSON()) + BigInt(resp.data.reserved.toJSON());
 
     const balanceData = {
@@ -106,8 +119,9 @@ async function logBalance(lookupAddress, note = "") {
         plancks: BigInt(total).toLocaleString(),
         free: resp.data.free.toHuman(),
         reserved: resp.data.reserved.toHuman(),
-        note,
     };
+
+    await updateResults(account, balanceData);
 
     loggedAccountData[account] = balanceData;
 
@@ -118,7 +132,11 @@ async function logBalance(lookupAddress, note = "") {
 
 // Check the address and add a error message if there is one
 function validateAddress(address, element = null) {
-    const check = checkAddress(address, PREFIX);
+    let addressEncoded = null;
+    try {
+        addressEncoded = encodeAddress(address, getPrefix());
+    } catch (_e) { }
+    const check = checkAddress(addressEncoded || address, getPrefix());
     const isValid = check[0];
     if (element) {
         if (isValid) element.setCustomValidity("");
@@ -140,25 +158,20 @@ function copyToSpreadsheet() {
         return [row];
     });
     navigator.clipboard.writeText(list.map(x => x.join("\t")).join("\n"));
+    document.getElementById("copyToSpreadsheet").innerHTML = "Copied!";
+    setTimeout(() => { document.getElementById("copyToSpreadsheet").innerHTML = "Copy to Spreadsheet"; }, 2000);
 }
 
 // Start this up with event listeners
 function init() {
     const lookupAddressEl = document.getElementById("lookupAddress");
-    const logNoteEl = document.getElementById("logNote");
     lookupAddressEl.addEventListener("input", () => {
         validateAddress(lookupAddressEl.value, lookupAddressEl);
     });
     document.getElementById("balanceForm").addEventListener("submit", (e) => {
         e.preventDefault();
-        logBalance(lookupAddressEl.value, logNoteEl.value);
+        logBalance(lookupAddressEl.value);
         lookupAddressEl.value = "";
-        logNoteEl.value = "";
-    });
-    document.getElementById("connectButton").addEventListener("click", connect);
-    document.getElementById("provider").addEventListener("input", () => {
-        document.getElementById("balanceForm").style.display = "none";
-        document.getElementById("copyToSpreadsheet").style.display = "none";
     });
     document.getElementById("copyToSpreadsheet").addEventListener("click", copyToSpreadsheet);
 
@@ -166,7 +179,7 @@ function init() {
         document.getElementById("log").innerHTML = "";
         loggedAccountData = {};
     });
-    triggerUpdates();
+    initConnection();
 }
 
 init();
