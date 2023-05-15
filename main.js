@@ -59,6 +59,10 @@ function displaySchedule(schedule, relayBlockNumber) {
     return scheduleEl;
 }
 
+function sortSchedule(a, b) {
+    return Math.sign((a.start.toNumber() + a.period.toNumber()), (b.start.toNumber() + b.period.toNumber()));
+}
+
 async function updateResults(account, balanceData) {
     const api = await loadApi();
 
@@ -92,7 +96,7 @@ async function updateResults(account, balanceData) {
             ul.append(unlockLi);
         }
 
-        schedules.filter(s => !isUnlocked(s)).forEach(s => {
+        schedules.filter(s => !isUnlocked(s)).sort(sortSchedule).forEach(s => {
             const li = document.createElement("li");
             li.append(displaySchedule(s, relayBlockNumber));
             ul.append(li);
