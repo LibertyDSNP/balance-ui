@@ -52,7 +52,7 @@ function displaySchedule(schedule, relayBlockNumber) {
     const unlockRelayBlock = (schedule.start.toNumber() + schedule.period.toNumber());
     scheduleEl.querySelector(".unlockRelayBlock").innerHTML = unlockRelayBlock.toLocaleString();
 
-    const untilUnlock = (relayBlockNumber - unlockRelayBlock) * 6;
+    const untilUnlock = (unlockRelayBlock - relayBlockNumber) * 6 * 1000;
     const unlockEstimate = new Date(Date.now() + untilUnlock);
     scheduleEl.querySelector(".estimatedUnlock").innerHTML = unlockEstimate.toLocaleString();
 
