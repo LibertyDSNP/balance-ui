@@ -37,7 +37,7 @@ function toDecimalUnit(balance) {
         return `${BigInt(balance.slice(0, -DECIMALS)).toLocaleString()}.${balance.slice(-DECIMALS)}`;
     }
 
-    return (Number(balance) / (10 ^ DECIMALS)).toLocaleString();
+    return balance > 0 ? (Number(balance) / (10 ^ DECIMALS)).toLocaleString() : "0";
 }
 
 function displaySchedule(schedule, relayBlockNumber) {
