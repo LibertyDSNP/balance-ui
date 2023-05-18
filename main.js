@@ -1,6 +1,6 @@
 import { checkAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@10.2.2/+esm';
 import { encodeAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@11.1.3/+esm';
-import { loadApi, initConnection, getCurrentRelayChainBlockNumber, getDecimals, getPrefix, getUnit } from './api.js';
+import { loadApi, initConnection, getCurrentRelayChainBlockNumber, toDecimalUnit, getPrefix, getUnit } from './api.js';
 
 let loggedAccountData = {};
 
@@ -26,18 +26,6 @@ function addLog(msg, prefix) {
     li.append(ul);
 
     document.getElementById("log").prepend(li);
-}
-
-// Balance to decimal UNIT
-function toDecimalUnit(balance) {
-    const DECIMALS = getDecimals();
-    // Some basic formatting of the bigint
-    balance = balance.toString();
-    if (balance.length >= DECIMALS) {
-        return `${BigInt(balance.slice(0, -DECIMALS)).toLocaleString()}.${balance.slice(-DECIMALS)}`;
-    }
-
-    return balance > 0 ? (Number(balance) / (10 ^ DECIMALS)).toLocaleString() : "0";
 }
 
 function displaySchedule(schedule, relayBlockNumber) {

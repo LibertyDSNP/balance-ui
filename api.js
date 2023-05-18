@@ -101,3 +101,15 @@ export async function getCurrentRelayChainBlockNumber() {
     relayBlockNumberCache = [Date.now(), result];
     return result;
 }
+
+// Balance to decimal UNIT
+export function toDecimalUnit(balance) {
+    const DECIMALS = getDecimals();
+    // Some basic formatting of the bigint
+    balance = balance.toString();
+    if (balance.length >= DECIMALS) {
+        return `${BigInt(balance.slice(0, -DECIMALS)).toLocaleString()}.${balance.slice(-DECIMALS)}`;
+    }
+
+    return balance > 0 ? (Number(balance) / (10 ** DECIMALS)).toLocaleString(undefined, { minimumFractionDigits: DECIMALS }) : "0";
+}
