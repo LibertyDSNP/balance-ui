@@ -42,13 +42,14 @@ export async function loadApi(providerUri) {
 }
 
 // Connect to the wallet and blockchain
-async function connect(event) {
+const connect = (postConnect) => async (event) => {
     event.preventDefault();
     let provider = document.getElementById("provider").value;
     if (provider === "custom") {
         provider = document.getElementById("providerCustom").value;
     }
     await loadApi(provider);
+    await postConnect();
 
     toggleConnectedVisibility(true, provider);
 }
@@ -73,8 +74,8 @@ function toggleConnectedVisibility(isConnected, provider = "...") {
     document.querySelectorAll(".hideConnected").forEach(e => e.style.display = isConnected ? "none" : "block");
 }
 
-export function initConnection() {
-    document.getElementById("connectButton").addEventListener("click", connect);
+export function initConnection(postConnect) {
+    document.getElementById("connectButton").addEventListener("click", connect(postConnect));
     document.getElementById("provider").addEventListener("input", (e) => {
         toggleConnectedVisibility(false);
         customProviderToggle(e.target.value);

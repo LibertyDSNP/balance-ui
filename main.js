@@ -154,6 +154,13 @@ function copyToSpreadsheet() {
     setTimeout(() => { document.getElementById("copyToSpreadsheet").innerHTML = "Copy to Spreadsheet"; }, 2000);
 }
 
+// Post node connection, set the lookupAddress if there is one
+function postConnect() {
+    const url = new URL(window.location.href);
+    const address = url.searchParams.get("address");
+    if (address) document.getElementById("lookupAddress").value = address;
+}
+
 // Start this up with event listeners
 function init() {
     const lookupAddressEl = document.getElementById("lookupAddress");
@@ -171,7 +178,7 @@ function init() {
         document.getElementById("log").innerHTML = "";
         loggedAccountData = {};
     });
-    initConnection();
+    initConnection(postConnect);
 }
 
 init();
