@@ -48,7 +48,7 @@ function displaySchedule(schedule, relayBlockNumber) {
 }
 
 function sortSchedule(a, b) {
-    return Math.sign((a.start.toNumber() + a.period.toNumber()), (b.start.toNumber() + b.period.toNumber()));
+    return -1 * Math.sign((a.start.toNumber() + a.period.toNumber()), (b.start.toNumber() + b.period.toNumber()));
 }
 
 async function updateResults(account, balanceData) {
