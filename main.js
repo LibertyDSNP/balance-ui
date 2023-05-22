@@ -1,6 +1,7 @@
 import { checkAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@10.2.2/+esm';
 import { encodeAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@11.1.3/+esm';
 import { loadApi, initConnection, getCurrentRelayChainBlockNumber, toDecimalUnit, getPrefix, getUnit } from './api.js';
+import { setUrlParameter, getParameterByName } from './url.js';
 
 let loggedAccountData = {};
 
@@ -156,8 +157,7 @@ function copyToSpreadsheet() {
 
 // Post node connection, set the lookupAddress if there is one
 function postConnect() {
-    const url = new URL(window.location.href);
-    const address = url.searchParams.get("address");
+    const address = getParameterByName("address");
     if (address) document.getElementById("lookupAddress").value = address;
 }
 
@@ -170,6 +170,7 @@ function init() {
     document.getElementById("balanceForm").addEventListener("submit", (e) => {
         e.preventDefault();
         logBalance(lookupAddressEl.value);
+        setUrlParameter("address", lookupAddressEl.value);
         lookupAddressEl.value = "";
     });
     document.getElementById("copyToSpreadsheet").addEventListener("click", copyToSpreadsheet);
