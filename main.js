@@ -1,5 +1,4 @@
-import { checkAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@10.2.2/+esm';
-import { encodeAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@11.1.3/+esm';
+import { checkAddress, encodeAddress } from 'https://cdn.jsdelivr.net/npm/@polkadot/util-crypto@12.3.1/+esm';
 import { loadApi, initConnection, getCurrentRelayChainBlockNumber, toDecimalUnit, getPrefix, getUnit } from './api.js';
 import { setUrlParameter, getParameterByName } from './url.js';
 
