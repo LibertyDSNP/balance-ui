@@ -1,90 +1,85 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Balance dApp</title>
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
-    <link rel="stylesheet" href="//unpkg.com/mvp.css@1.12/mvp.css">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+    <link rel="stylesheet" href="//unpkg.com/mvp.css@1.12/mvp.css" />
     <style>
-        dt {
-            font-weight: bold;
-            text-decoration: underline;
-        }
+      dt {
+        font-weight: bold;
+        text-decoration: underline;
+      }
 
-        dd {
-            margin: 0;
-            padding: 0 0 0.5em 0;
-        }
+      dd {
+        margin: 0;
+        padding: 0 0 0.5em 0;
+      }
     </style>
-</head>
+  </head>
 
-<body style="padding: 0 20px 10px">
+  <body style="padding: 0 20px 10px">
     <template id="schedule-template">
-        <dl>
-            <dt>Locked Until (estimated local time)</dt>
-            <dd class="estimatedUnlock"></dd>
-            <dt>Relay Chain Block Number</dt>
-            <dd class="unlockRelayBlock"></dd>
-            <dt>Amount</dt>
-            <dd class="balanceResultTokens"></dd>
-        </dl>
+      <dl>
+        <dt>Locked Until (estimated local time)</dt>
+        <dd class="estimatedUnlock"></dd>
+        <dt>Relay Chain Block Number</dt>
+        <dd class="unlockRelayBlock"></dd>
+        <dt>Amount</dt>
+        <dd class="balanceResultTokens"></dd>
+      </dl>
     </template>
 
     <h1>Balance Check</h1>
-    <p>
-        Does a simple lookup and report of balance information for an account
-    </p>
+    <p>Does a simple lookup and report of balance information for an account</p>
     <div class="hideConnected">
-        <form id="setupForm">
-            <label for="provider">Choose a Network</label>
-            <select id="provider" required>
-                <option value="wss://1.rpc.frequency.xyz" name="frequency">Frequency Mainnet</option>
-                <option value="wss://rpc.rococo.frequency.xyz" name="rococo">Frequency Testnet/Rococo</option>
-                <option value="ws://localhost:9944" name="localhost">Localhost</option>
-                <option value="custom" name="Custom">Custom</option>
-            </select>
-            <div id="providerCustomContainer" style="display: none;">
-                <label for="providerCustom">Custom Network Connection</label>
-                <input type="text" id="providerCustom" name="providerCustom" placeholder="Custom wss://..." />
-            </div>
+      <form id="setupForm">
+        <label for="provider">Choose a Network</label>
+        <select id="provider" required>
+          <option value="wss://1.rpc.frequency.xyz" name="frequency">Frequency Mainnet</option>
+          <option value="wss://0.rpc.testnet.amplica.io" name="frequency_paseo">Frequency Testnet/Paseo</option>
+          <option value="ws://localhost:9944" name="localhost">Localhost</option>
+          <option value="custom" name="Custom">Custom</option>
+        </select>
+        <div id="providerCustomContainer" style="display: none">
+          <label for="providerCustom">Custom Network Connection</label>
+          <input type="text" id="providerCustom" name="providerCustom" placeholder="Custom wss://..." />
+        </div>
 
-            <button type="button" id="connectButton">Connect to Node</button>
-            <span id="connectError" style="display: none; color: red;"></span>
-        </form>
+        <button type="button" id="connectButton">Connect to Node</button>
+        <span id="connectError" style="display: none; color: red"></span>
+      </form>
     </div>
-    <section class="showConnected" style="display: none;">
-        <button type="button" id="disconnectButton">Disconnect from <span id="currentProvider">...</span></button>
+    <section class="showConnected" style="display: none">
+      <button type="button" id="disconnectButton">Disconnect from <span id="currentProvider">...</span></button>
     </section>
     <br />
-    <form id="balanceForm" class="showConnected" style="display: none;">
-        <label for="lookupAddress">Lookup Address:</label>
-        <input type="text" id="lookupAddress" name="lookupAddress" required>
-        <button type="submit">Get Balance</button>
+    <form id="balanceForm" class="showConnected" style="display: none">
+      <label for="lookupAddress">Lookup Address:</label>
+      <input type="text" id="lookupAddress" name="lookupAddress" required />
+      <button type="submit">Get Balance</button>
     </form>
-    <section id="currentResults" class="showConnected" style="display: none;">
-        <h2>Address: <span id="resultAddress"></span></h2>
-        <dl>
-            <dt>Balance</dt>
-            <dd id="resultBalanceTokens">...</dd>
-            <dt>Balance (Plancks)</dt>
-            <dd id="resultBalancePlancks">...</dd>
-            <dt>Reserved</dt>
-            <dd id="resultReserved">...</dd>
-        </dl>
-        <h3>Time Release Unlock Schedule</h3>
-        <div id="timeReleaseSchedule">...</div>
+    <section id="currentResults" class="showConnected" style="display: none">
+      <h2>Address: <span id="resultAddress"></span></h2>
+      <dl>
+        <dt>Balance</dt>
+        <dd id="resultBalanceTokens">...</dd>
+        <dt>Balance (Plancks)</dt>
+        <dd id="resultBalancePlancks">...</dd>
+        <dt>Reserved</dt>
+        <dd id="resultReserved">...</dd>
+      </dl>
+      <h3>Time Release Unlock Schedule</h3>
+      <div id="timeReleaseSchedule">...</div>
     </section>
 
-    <details class="showConnected" style="display: none;">
-        <summary>Show Log</summary>
-        <button type="button" id="copyToSpreadsheet" style="float: right">To Clipboard</button>
-        <h2>Balance Log</h2>
-        <ul id="log"></ul>
-        <button type="button" id="clearLog">Clear</button>
+    <details class="showConnected" style="display: none">
+      <summary>Show Log</summary>
+      <button type="button" id="copyToSpreadsheet" style="float: right">To Clipboard</button>
+      <h2>Balance Log</h2>
+      <ul id="log"></ul>
+      <button type="button" id="clearLog">Clear</button>
     </details>
     <script type="module" src="./main.js"></script>
-</body>
-
-
+  </body>
 </html>
